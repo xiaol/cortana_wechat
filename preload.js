@@ -89,7 +89,6 @@ function onLogin(){
 			}
 		}
 		//处理结果集里面的信息
-		_console.log("结果集长度",msg_send.length);
 		if(msg_send.length>0){
 			if(send_flag){
 				_console.log("开始发送信息",send_flag)
