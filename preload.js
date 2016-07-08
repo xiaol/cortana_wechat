@@ -15,6 +15,8 @@ var send_flag = true
 var addMsg_flag = true
 //是否可以点击
 var click_falg = true
+//存储收到的信息
+var msg_chats = []
 // 应对 微信网页偷换了console 使起失效
 // 保住console引用 便于使用
 window._console = window.console
@@ -97,69 +99,79 @@ function onLogin(){
 				msg_send = msg_send.slice(1)
 			}
 		}
-		// var newFriend = $(".chat_item .slide-left .ng-scope")[0];
-	}, 2070)
+		var newFriend = $(".chat_item .slide-left .ng-scope")[0];
+	}, 400)
 }
 //解析信息
 function resolve_qst($chat_item){   
-	_console.log("解析信息",click_falg)
 	if(click_falg){
 		click_falg = false;
 		_console.log("禁止点击","解析")
 		$chat_item.click()
 		setTimeout(function(){
-			var reply = {}
-			var usernickname = $(".header .nickname [ng-bind-html='account.NickName']").text();
 			// 自动回复 相同的内容
-			var $msg = $([
-				'.message:not(.me) .bubble_cont > div',
-				'.message:not(.me) .bubble_cont > a.app',
-				'.message:not(.me) .emoticon',
-				'.message_system'
-			].join(', ')).last()
-			var $message = $msg.closest('.message')
-			var $nickname = $message.find('.nickname')
-			var $titlename = $('.title_name')
-			if ($nickname.length) { // 群聊
-				var from = $nickname.text()
-				var room = $titlename.text()
-			} else { // 单聊
-				var from = $titlename.text()
-				var room = null
-			}
-			debug('来自', from) // 这里的nickname会被remark覆盖
-			if ($msg.is('.card')) {
-				var name = $msg.find('.display_name').text()
-				var wxid = $msg.find('.signature').text()
-				var img = $msg.find('.img').prop('src') // 认证限制
-				debug('接收', 'card', name, wxid)
-				reply.text = ""
-				addFriends();
-			} else if ($msg.is('a.app')) {
-				var url = $msg.attr('href')
-				url = decodeURIComponent(url.match(/requrl=(.+?)&/)[1])
-				var title = $msg.find('.title').text()
-				var desc = $msg.find('.desc').text()
-				var img = $msg.find('.cover').prop('src') // 认证限制
-				debug('接收', 'link', title, desc, url)
-				reply.text = title + '\n' + url
-			} else if ($msg.is('.plain')) {
-				var text = ''
-				var $text = $msg.find('.js_message_plain')
-				text = $text.text();
-				//判断消息是否是数字或链接
-				// if(text.indexOf("http://")>=0||text.indexOf("https://")>=0||!isNaN(text)){
-				// 	reply.text = text
-				// }else{
-				// 	debug('接收','不合格信息(沉默)',text)
-				// 	return false
-				// }
-				reply.text = text
-				debug('接收', 'text', text)
+			var msg_content = $([
+				'.message.me .bubble_cont > div',
+				'.message.me .bubble_cont > a.app',
+				'.message.me .emoticon',
+				'.message_system:not([ng-if="message.MMTime"])'
+			].join(', ')).parents(".ng-scope[ng-repeat='message in chatContent']").first()
+			var $msg;
+			if(msg_content&&msg_content.length>0){
+				$msg = msg_content.nextAll(".ng-scope[ng-repeat]").find([
+					'.message.you .bubble_cont > div',
+					'.message.you .bubble_cont > a.app',
+					'.message.you .emoticon',
+					'.message_system:not([ng-if="message.MMTime"])'
+				].join(', '))
 			}else{
-				debug('接收', 'BUG', $msg);
+				$msg = $([
+					'.message.you .bubble_cont > div',
+					'.message.you .bubble_cont > a.app',
+					'.message.you .emoticon',
+					'.message_system:not([ng-if="message.MMTime"])'
+				].join(', '))
 			}
-			requestData(reply.text,$titlename.text(),$chat_item)
+			//信息解析完成 发送请求
+			// if(msg_analyze($msg)){
+			// 	msg = msg_analyze($msg)
+			// }else{
+			// 	return false;
+			// }
+			if($msg&&$msg.length>0){
+				var ml = $msg.length;
+				var msg = {};  
+				var item_index = -1;
+				//遍历聊天记录组数据
+				_console.log("数组长度",msg_chats)
+				for(var m in msg_chats){
+					if($chat_item==msg_chats[m].item){
+						_console.log("找到下标");
+						item_index = m
+					}
+				}
+				if(item_index==-1){
+					var chat_item_msg = {}
+					chat_item_msg.item = $chat_item;
+					chat_item_msg.msg = [];
+					item_index=msg_chats.length;
+					msg_chats.push(chat_item_msg);
+				}
+				for(var m = 0;m<ml;m++){
+					var isthere = false;
+					msg = msg_analyze($($msg[m]))
+					for(var c in msg_chats[item_index].msg){
+						_console.log(msg.text,msg_chats[item_index].msg[c])
+						if(msg.text==msg_chats[item_index].msg[c]){
+							isthere = true
+						}
+					}
+					if(!isthere){
+						msg_chats[item_index].msg.push(msg.text)
+						requestData(msg.text,msg.title,$chat_item)
+					}
+				}
+			}
 			reset();
 			receive_flag = true;
 		}, 100)
@@ -167,7 +179,50 @@ function resolve_qst($chat_item){
 		msg_receive.push($chat_item)
 		receive_flag = true
 	}
-	
+}
+//分析信息类型  拆分标题链接
+function msg_analyze ($massage) {
+	var $msg = $massage;
+	var $message = $msg.closest('.message')
+	var $nickname = $message.find('.nickname')
+	var $titlename = $('.title_name')
+	var msg_text = {};
+	if ($nickname.length) { // 群聊
+		var from = $nickname.text()
+		var room = $titlename.text()
+	} else { // 单聊
+		var from = $titlename.text()
+		var room = null
+	}
+	debug('来自', from) // 这里的nickname会被remark覆盖
+	if ($msg.is('.card')) {
+		var name = $msg.find('.display_name').text()
+		var wxid = $msg.find('.signature').text()
+		var img = $msg.find('.img').prop('src') // 认证限制
+		debug('接收', 'card', name, wxid)
+		addFriends();
+		msg_text.text = false
+	} else if ($msg.is('a.app')){
+		var url = $msg.attr('href')
+		url = decodeURIComponent(url.match(/requrl=(.+?)&/)[1])
+		var title = $msg.find('.title').text()
+		var desc = $msg.find('.desc').text()
+		var img = $msg.find('.cover').prop('src') // 认证限制
+		debug('接收', 'link', title, desc, url)
+		msg_text.text = title + '\n' + url
+	} else if ($msg.is('.plain')) {
+		var text = ''
+		var $text = $msg.find('.js_message_plain')
+		text = $text.text();
+		msg_text.text = text
+		debug('接收', 'text', text)
+	}else{
+		msg_text.text = '无效的信息类型'
+		debug('接收', 'BUG', msg_text);
+	}
+	msg_text.title = $titlename.text()
+	debug("发送请求")
+	return msg_text
 }
 //处理结果集   发送数据
 function resolve_asw(data_item){
@@ -177,6 +232,12 @@ function resolve_asw(data_item){
 		click_falg = false;
 		data_item.item.click();
 		setTimeout(function(){
+			for(var c in msg_chats){
+				if(msg_chats[c].item==data_item){
+					_console.log("清空聊天数组")
+					msg_chats[c].msg = []
+				}
+			}
 			var opt = {};
 			opt.html = data_item.text;
 			paste(opt);
@@ -235,6 +296,9 @@ function requestData(urlStr,nickname,chat_item){
 	var url = '';
 	var uStr = urlStr;
 	var reply = {};
+	if(!urlStr){
+		return false
+	}
 	if(!isNaN(uStr)){
 		var lists = JSON.parse(storage.getItem(nickname));
 		if(lists&&parseInt(uStr)<=lists.length&&lists.length>0){
@@ -265,11 +329,12 @@ function requestData(urlStr,nickname,chat_item){
 				// debug(history[h],"新旧标题",title,"结果",history[h].title==title)
 				if(history[h].title==title){
 					var beginNo = parseInt(history[h].begin),endNo = parseInt(history[h].end);
-					var datalist = JSON.parse(storage.getItem(nickname));
-					for(var d=beginNo;d<=endNo;d++){
-						reply.html += (d + 1) + '.' + ' ' + datalist[d].title +"<br>";
-			            reply.html += datalist[d].url + '<br>';
-					}
+					// var datalist = JSON.parse(storage.getItem(nickname));
+					// for(var d=beginNo;d<=endNo;d++){
+					// 	reply.html += (d + 1) + '.' + ' ' + datalist[d].title +"<br>";
+			  //           reply.html += datalist[d].url + '<br>';
+					// }
+					reply.html = "该信息已答复--"+beginNo+"到"+endNo
 					var msg_send_item = {};
 					msg_send_item.item = chat_item;
 					msg_send_item.text = reply.html;
