@@ -86,7 +86,6 @@ function onReddot($chat_item){
 		var room = null
 	}
 	debug('来自', from, room) // 这里的nickname会被remark覆盖
-	_console.log($msg)
 	if ($msg.is('.message_system')) {
 		// var ctn = $msg.find('.content').text()
 		// if (ctn === '收到红包，请在手机上查看') {
@@ -416,8 +415,6 @@ function dataConn(requestUrl,title,url,nickname){
 		            for(var d = x*20; d<cdt;d ++){
 		            	tempArry.push(encodeURIComponent(data[d].url));
 		            }
-		            // debug("data数组",data,"长度",data.length)
-		            // debug("临时数组",tempArry,"长度",tempArry.length)
 		            //生成短url
 		            var short_urls = createShort_url(tempArry);
 		            // debug("短连接数组",short_urls,"长度",short_urls.length)

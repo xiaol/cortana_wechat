@@ -17,6 +17,8 @@ var addMsg_flag = true
 var click_falg = true
 //存储收到的信息
 var msg_chats = []
+//计数器
+var o = 0
 // 应对 微信网页偷换了console 使起失效
 // 保住console引用 便于使用
 window._console = window.console
@@ -155,13 +157,14 @@ function resolve_qst($chat_item){
 					chat_item_msg.item = $chat_item;
 					chat_item_msg.msg = [];
 					item_index=msg_chats.length;
+					_console.log("添加item");
 					msg_chats.push(chat_item_msg);
 				}
+				_console.log("数组长度2",msg_chats)
 				for(var m = 0;m<ml;m++){
 					var isthere = false;
 					msg = msg_analyze($($msg[m]))
 					for(var c in msg_chats[item_index].msg){
-						_console.log(msg.text,msg_chats[item_index].msg[c])
 						if(msg.text==msg_chats[item_index].msg[c]){
 							isthere = true
 						}
@@ -169,6 +172,10 @@ function resolve_qst($chat_item){
 					if(!isthere){
 						msg_chats[item_index].msg.push(msg.text)
 						requestData(msg.text,msg.title,$chat_item)
+						o++
+						_console.log("发送请求",o)
+					}else{
+						_console.log("信息已经处理~")
 					}
 				}
 			}
@@ -221,19 +228,17 @@ function msg_analyze ($massage) {
 		debug('接收', 'BUG', msg_text);
 	}
 	msg_text.title = $titlename.text()
-	debug("发送请求")
 	return msg_text
 }
 //处理结果集   发送数据
 function resolve_asw(data_item){
 	_console.log("发送数据",click_falg)
 	if(click_falg){
-		_console.log("禁止点击","发送")
 		click_falg = false;
 		data_item.item.click();
 		setTimeout(function(){
 			for(var c in msg_chats){
-				if(msg_chats[c].item==data_item){
+				if(msg_chats[c].item==data_item.item){
 					_console.log("清空聊天数组")
 					msg_chats[c].msg = []
 				}
@@ -257,7 +262,6 @@ function reset(){
 	if (msgs.length >= 30) msgs.splice(0, 20)
 	$('img[src*=filehelper]').closest('.chat_item')[0].click()
 	click_falg = true;
-	_console.log("是否可以点击",click_falg)
 }
 
 function paste(opt){
@@ -296,6 +300,7 @@ function requestData(urlStr,nickname,chat_item){
 	var url = '';
 	var uStr = urlStr;
 	var reply = {};
+	debug("发送请求",uStr)
 	if(!urlStr){
 		return false
 	}
@@ -370,6 +375,9 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         statusCode: {
 	        404:function(data){
 	        	_console.log(data);
+	        },
+	        503:function(data){
+	        	_console.log("数据请求错误",data);
 	        }
 	    },
         success: function(res_data, textStatus, XMLHttpRequest){
@@ -385,8 +393,8 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
 				var tag_l = reply.html.length;
 				for(var r =4;r<tag_l*1.5;r++){
 					reply.html += "-"
-				} 
-				reply.html += "<br>" 
+				}
+				reply.html += "<br>"
             }
             if(data&&data.length>0){
             	var new_item = [];
