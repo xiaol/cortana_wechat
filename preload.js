@@ -3,6 +3,7 @@ var clipboard = require('electron').clipboard
 var NativeImage = require('electron').nativeImage
 var _ = require('lodash')
 var mydata = require("./request")
+var base = require("./base")
 //收到的信息集合
 var msg_receive = []
 //待发送的信息集合
@@ -207,7 +208,7 @@ function msg_analyze ($massage) {
 		var wxid = $msg.find('.signature').text()
 		var img = $msg.find('.img').prop('src') // 认证限制
 		debug('接收', 'card', name, wxid)
-		addFriends();
+		addFriends()
 		msg_text.text = false
 	} else if ($msg.is('a.app')){
 		var url = $msg.attr('href')
@@ -277,7 +278,6 @@ function paste(opt){
 	clipboard.writeHtml(oldHtml)
 	clipboard.writeText(oldText)
 }
-
 //添加好友
 function addFriends(){
 	$(".bubble").filter(".js_message_bubble").filter(".ng-scope").filter(".bubble_default").filter(".left").children(".bubble_cont").children(".card")[0].click();
@@ -337,7 +337,7 @@ function requestData(urlStr,nickname,chat_item){
 					// var datalist = JSON.parse(storage.getItem(nickname));
 					// for(var d=beginNo;d<=endNo;d++){
 					// 	reply.html += (d + 1) + '.' + ' ' + datalist[d].title +"<br>";
-			  //           reply.html += datalist[d].url + '<br>';
+				    //     reply.html += datalist[d].url + '<br>';
 					// }
 					reply.html = "该信息已答复--"+beginNo+"到"+endNo
 					var msg_send_item = {};
@@ -361,108 +361,76 @@ function requestData(urlStr,nickname,chat_item){
 }
 //请求新闻列表
 function dataConn(requestUrl,title,url,nickname,chat_item){
-	$.ajax({
-        type: 'post',
-        url: requestUrl,
-        dataType: "json",
-        // contentType: "multipart/form-data;",
-        data: {'title':title,'url':encodeURIComponent(url)},
-        jsonp:"callback",
-        timeout: 100000,
-        crossDomain:true,
-        cache: false,
-        async: true,
-        statusCode: {
-	        404:function(data){
-	        	_console.log(data);
-	        },
-	        503:function(data){
-	        	_console.log("数据请求错误",data);
-	        }
-	    },
-        success: function(res_data, textStatus, XMLHttpRequest){
-            var reply = {};
-            var data = res_data.searchItems;
-            var tags = res_data.tags;
-            reply.html = '';
-            if(tags&&tags.length>0){
-            	for(var t in tags){
-            		reply.html += tags[t] + " | " 
-            	}
-				reply.html += "<br>" 
-				var tag_l = reply.html.length;
-				for(var r =4;r<tag_l*1.5;r++){
-					reply.html += "-"
-				}
-				reply.html += "<br>"
-            }
-            if(data&&data.length>0){
-            	var new_item = [];
-            	var new_item_title = JSON.parse(storage.getItem(nickname+"_send"))?JSON.parse(storage.getItem(nickname+"_send")):[]
-				var old_item = JSON.parse(storage.getItem(nickname))?JSON.parse(storage.getItem(nickname)):[];
-				for(var d in old_item){
-		            new_item.push(old_item[d]);
-	            }
-	            for(var x = 0;x <(data.length/20);x++){
-		            var tempArry = [];
-	            	//抽出url
-	            	var cdt = 20*(x+1)>data.length?data.length:20*(x+1);
-		            for(var d = x*20; d<cdt;d ++){
-		            	tempArry.push(encodeURIComponent(data[d].url));
-		            }
-		            // debug("data数组",data,"长度",data.length)
-		            // debug("临时数组",tempArry,"长度",tempArry.length)
-		            //生成短url
-		            var short_urls = createShort_url(tempArry);
-		            // debug("短连接数组",short_urls,"长度",short_urls.length)
-		            //替换长url
-		            for(var s in short_urls){
-		            	for(var d in data){
-		            		if(data[d].url==short_urls[s].long){
-		            			data[d].url = short_urls[s].short;
-		            			break;
-		            		}
-		            	}
-		            }
-	            }
-	            //替换完成 发送并保存信息
-	            for(var d in data){
-		            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + data[d].title;
-		            reply.html += data[d].url + '<br>';
-		            new_item.push(data[d]);
-	            }
-	            new_item_title.push({"title":title,"begin":old_item.length,"end":(new_item.length-1)});
-				storage.setItem(nickname,JSON.stringify(new_item));
-				storage.setItem(nickname+"_send", JSON.stringify(new_item_title));
-        	}else{
-        		reply.html = "暂无推荐文章";
+	var requestData = {};
+	requestData.title = title;
+	requestData.url = encodeURIComponent(url);
+	base.dataConn(requestUrl,requestData,"post",function(res_data){
+        var reply = {};
+        var data = res_data.searchItems;
+        var tags = res_data.tags;
+        reply.html = '';
+        if(tags&&tags.length>0){
+        	for(var t in tags){
+        		reply.html += tags[t] + " | " 
         	}
-			var msg_send_item = {};
-			msg_send_item.item = chat_item;
-			msg_send_item.text = reply.html;
-            msg_send.push(msg_send_item);
-        },
-        error:function(e) {
-        	return false;
+			reply.html += "<br>" 
+			var tag_l = reply.html.length;
+			for(var r =4;r<tag_l*1.5;r++){
+				reply.html += "-"
+			}
+			reply.html += "<br>"
         }
-    })
+        if(data&&data.length>0){
+        	var new_item = [];
+        	var new_item_title = JSON.parse(storage.getItem(nickname+"_send"))?JSON.parse(storage.getItem(nickname+"_send")):[]
+			var old_item = JSON.parse(storage.getItem(nickname))?JSON.parse(storage.getItem(nickname)):[];
+			for(var d in old_item){
+	            new_item.push(old_item[d]);
+            }
+            for(var x = 0;x <(data.length/20);x++){
+	            var tempArry = [];
+            	//抽出url
+            	var cdt = 20*(x+1)>data.length?data.length:20*(x+1);
+	            for(var d = x*20; d<cdt;d ++){
+	            	tempArry.push(encodeURIComponent(data[d].url));
+	            }
+	            // debug("data数组",data,"长度",data.length)
+	            // debug("临时数组",tempArry,"长度",tempArry.length)
+	            //生成短url
+	            var short_urls = createShort_url(tempArry);
+	            // debug("短连接数组",short_urls,"长度",short_urls.length)
+	            //替换长url
+	            for(var s in short_urls){
+	            	for(var d in data){
+	            		if(data[d].url==short_urls[s].long){
+	            			data[d].url = short_urls[s].short;
+	            			break;
+	            		}
+	            	}
+	            }
+            }
+            //替换完成 发送并保存信息
+            for(var d in data){
+	            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + data[d].title;
+	            reply.html += data[d].url + '<br>';
+	            new_item.push(data[d]);
+            }
+            new_item_title.push({"title":title,"begin":old_item.length,"end":(new_item.length-1)});
+			storage.setItem(nickname,JSON.stringify(new_item));
+			storage.setItem(nickname+"_send", JSON.stringify(new_item_title));
+    	}else{
+    		reply.html = "暂无推荐文章";
+    	}
+		var msg_send_item = {};
+		msg_send_item.item = chat_item;
+		msg_send_item.text = reply.html;
+        msg_send.push(msg_send_item);
+	});
 }
 //请求今日热点
 function getHots(requestUrl,chat_item){
-	$.ajax({
-        type: 'get',
-        url: requestUrl,
-        dataType: "json",
-        // contentType: "multipart/form-data;",
-        jsonp:"callback",
-        timeout: 100000,
-        crossDomain:true,
-        cache: false,
-        async: true,
-        statusCode: {
-	        
-	    },
-        success: function(data, textStatus, XMLHttpRequest){
+	base.dataConn(requestUrl,"","get",
+		function(data, textStatus, XMLHttpRequest){
             var send_msg = {};
             send_msg.html = '';
             if(data.ret_code==1&&data.result.length>0){
@@ -479,7 +447,6 @@ function getHots(requestUrl,chat_item){
 		            // debug("临时数组",tempArry,"长度",tempArry.length)
 		            //生成短url
 		            var short_urls = createShort_url(tempArry);
-		            // debug("短连接数组",short_urls,"长度",short_urls.length)
 		            //替换长url
 		            for(var s in short_urls){
 		            	for(var r in results_hot){
@@ -503,31 +470,21 @@ function getHots(requestUrl,chat_item){
 			msg_send_item.item = chat_item;
 			msg_send_item.text = send_msg.html;
             msg_send.push(msg_send_item);
-        },
-        error:function(e) {
-        	return false;
         }
-    })
+    )
 }
 //生成短连接
 function createShort_url(urls){
 	//urls最大长度20
 	var showurls = [];
-	var sina_url = 'https://api.weibo.com/2/short_url/shorten.json';
-    $.ajax({
-        type: 'get',
-        url: sina_url+'?access_token=2.004t5RdC0MDVFH6d0cee864fK9S8mB&url_long='+urls.join("&url_long="),
-        dataType: "json",
-        contentType: "multipart/form-data;",
-        jsonp:"callback",
-        crossDomain:true,
-        cache: false,
-        async: false,
-        success: function(data, textStatus, XMLHttpRequest){
-            for(var d in data.urls){
-            	showurls.push({"short":data.urls[d].url_short,"long":data.urls[d].url_long});
-            }
+	var requestUrl = mydata.getShortUrl;
+    requestUrl += '?access_token=2.004t5RdC0MDVFH6d0cee864fK9S8mB&url_long='+urls.join("&url_long="),
+    base.dataConn(requestUrl,"","get",function(data){
+    	for(var d in data.urls){
+        	showurls.push({"short":data.urls[d].url_short,"long":data.urls[d].url_long});
         }
-    })
+        _console.log("生成短连接");
+    },false);
+        _console.log("返回单链接");
     return showurls;
 }
