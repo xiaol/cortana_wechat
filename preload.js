@@ -478,10 +478,12 @@ function getHots(requestUrl,chat_item){
 //获取问题答案
 function getAnswer (chat_item,question) {
 	var requestUrl = mydata.getAnswer;
-	base.dataConn(requestUrl,"","get",function(data){
+	var requestData = {};
+	requestData.question = question;
+	base.dataConn(requestUrl,requestData,"get",function(data){
 		var msg_send_item = {},answer;
 		if(data&&data.answer){
-			answer = data.question + "<br>" + data.answer;
+			answer = data.question + "©<br>" + data.answer;
 		}else{
 			answer = "没找到答案";
 		}
