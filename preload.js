@@ -215,7 +215,7 @@ function msg_analyze ($massage) {
 	} else if ($msg.is('.plain')) {
 		var text = ''
 		var $text = $msg.find('.js_message_plain')
-		text = $text.text();
+		text = $text.text()
 		msg_text.text = text
 		debug('接收', 'text', text)
 	}else{
@@ -225,6 +225,7 @@ function msg_analyze ($massage) {
 	msg_text.title = $titlename.text()
 	return msg_text
 }
+
 //处理结果集   发送数据
 function resolve_asw(data_item){
 	if(click_falg){
@@ -299,12 +300,9 @@ function requestData(urlStr,nickname,chat_item){
 		return false
 	}
 	_console.log("判断信息走向~")
-	_console.log(myname)
 	if(uStr.indexOf("@"+myname)>=0){
 		var question = uStr.replace("@"+myname,"")
 		getAnswer(chat_item,question);
-		// msg_send_item.text = "艾特我干啥~~";
-		// msg_send.push(msg_send_item);
 		return "";
 	}
 	if(!isNaN(uStr)){
@@ -483,7 +481,7 @@ function getAnswer (chat_item,question) {
 	base.dataConn(requestUrl,"","get",function(data){
 		var msg_send_item = {},answer;
 		if(data&&data.answer){
-			answer = data.answer;
+			answer = data.question + "<br>" + data.answer;
 		}else{
 			answer = "没找到答案";
 		}
