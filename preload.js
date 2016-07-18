@@ -106,7 +106,7 @@ function onLogin(){
 	}, 400)
 }
 //解析信息
-function resolve_qst($chat_item){   
+function resolve_qst($chat_item){
 	if(click_falg){
 		_console.log("解析信息")
 		click_falg = false;
@@ -134,6 +134,7 @@ function resolve_qst($chat_item){
 					'.message_system:not([ng-if="message.MMTime"])'
 				].join(', '))
 			}
+			_console.log("信息组",$msg)
 			//信息解析完成 发送请求
 			// if(msg_analyze($msg)){
 			// 	msg = msg_analyze($msg)
