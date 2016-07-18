@@ -3,7 +3,6 @@ var clipboard = require('electron').clipboard
 var NativeImage = require('electron').nativeImage
 var _ = require('lodash')
 var mydata = require("./request")
-var base = require("./base")
 //收到的信息集合
 var msg_receive = []
 //待发送的信息集合
@@ -20,8 +19,6 @@ var click_falg = true
 var msg_chats = []
 //计数器
 var o = 0
-//我的名称
-var myname = ""
 // 应对 微信网页偷换了console 使起失效
 // 保住console引用 便于使用
 window._console = window.console
@@ -50,6 +47,7 @@ function init(){
 	var checkForQrcode = setInterval(function(){
 		var qrimg = document.querySelector('.qrcode img')
 		if (qrimg && qrimg.src.match(/\/qrcode/)) {
+			// debug('二维码', qrimg.src)
 			clearInterval(checkForQrcode)
 		}
 	}, 100)
@@ -65,7 +63,6 @@ function init(){
 function onLogin(){
 	// ipc.sendToHost('login')
 	$('img[src*=filehelper]').closest('.chat_item')[0].click()
-	myname = $(".panel .header .info .nickname span.display_name").text()
 	var checkForReddot = setInterval(function(){
 		// window.isFocus = true
 		// 产生红点数量
@@ -76,8 +73,9 @@ function onLogin(){
 				addMsg_flag = false
 				var l = $reddot.length;
 				for(var r=0;r<l;r++){
+					_console.log($reddot[r]);
 					var $chat_item = $reddot[r].closest('.chat_item')
-					msg_receive.push($chat_item)
+					msg_receive.push($chat_item);
 					$chat_item.click()
 				}
 				reset()
@@ -97,6 +95,7 @@ function onLogin(){
 		//处理结果集里面的信息
 		if(msg_send.length>0){
 			if(send_flag){
+				_console.log("开始发送信息",send_flag)
 				send_flag = false;
 				resolve_asw(msg_send[0])
 				msg_send = msg_send.slice(1)
@@ -108,10 +107,11 @@ function onLogin(){
 //解析信息
 function resolve_qst($chat_item){   
 	if(click_falg){
-		_console.log("解析信息")
 		click_falg = false;
+		_console.log("禁止点击","解析")
 		$chat_item.click()
 		setTimeout(function(){
+			// 自动回复 相同的内容
 			var msg_content = $([
 				'.message.me .bubble_cont > div',
 				'.message.me .bubble_cont > a.app',
@@ -145,8 +145,10 @@ function resolve_qst($chat_item){
 				var msg = {};  
 				var item_index = -1;
 				//遍历聊天记录组数据
+				_console.log("数组长度",msg_chats)
 				for(var m in msg_chats){
 					if($chat_item==msg_chats[m].item){
+						_console.log("找到下标");
 						item_index = m
 					}
 				}
@@ -155,12 +157,13 @@ function resolve_qst($chat_item){
 					chat_item_msg.item = $chat_item;
 					chat_item_msg.msg = [];
 					item_index=msg_chats.length;
+					_console.log("添加item");
 					msg_chats.push(chat_item_msg);
 				}
+				_console.log("数组长度2",msg_chats)
 				for(var m = 0;m<ml;m++){
 					var isthere = false;
 					msg = msg_analyze($($msg[m]))
-					var $nickname = $($msg[m]).find('.nickname')
 					for(var c in msg_chats[item_index].msg){
 						if(msg.text==msg_chats[item_index].msg[c]){
 							isthere = true
@@ -168,8 +171,9 @@ function resolve_qst($chat_item){
 					}
 					if(!isthere){
 						msg_chats[item_index].msg.push(msg.text)
-						_console.log("处理信息")
 						requestData(msg.text,msg.title,$chat_item)
+						o++
+						_console.log("发送请求",o)
 					}else{
 						_console.log("信息已经处理~")
 					}
@@ -197,6 +201,7 @@ function msg_analyze ($massage) {
 		var from = $titlename.text()
 		var room = null
 	}
+	debug('来自', from) // 这里的nickname会被remark覆盖
 	if ($msg.is('.card')) {
 		var name = $msg.find('.display_name').text()
 		var wxid = $msg.find('.signature').text()
@@ -227,13 +232,14 @@ function msg_analyze ($massage) {
 }
 //处理结果集   发送数据
 function resolve_asw(data_item){
+	_console.log("发送数据",click_falg)
 	if(click_falg){
 		click_falg = false;
 		data_item.item.click();
 		setTimeout(function(){
-			_console.log("发送信息")
 			for(var c in msg_chats){
 				if(msg_chats[c].item==data_item.item){
+					_console.log("清空聊天数组")
 					msg_chats[c].msg = []
 				}
 			}
@@ -293,19 +299,9 @@ function requestData(urlStr,nickname,chat_item){
 	var url = '';
 	var uStr = urlStr;
 	var reply = {};
-	var msg_send_item = {};
-	msg_send_item.item = chat_item;
+	debug("发送请求",uStr)
 	if(!urlStr){
 		return false
-	}
-	_console.log("判断信息走向~")
-	_console.log(myname)
-	if(uStr.indexOf("@"+myname)>=0){
-		var question = uStr.replace("@"+myname,"")
-		getAnswer(chat_item,question);
-		// msg_send_item.text = "艾特我干啥~~";
-		// msg_send.push(msg_send_item);
-		return "";
 	}
 	if(!isNaN(uStr)){
 		var lists = JSON.parse(storage.getItem(nickname));
@@ -313,12 +309,12 @@ function requestData(urlStr,nickname,chat_item){
 			var item = lists[parseInt(uStr)-1];
 			uStr = item.title + item.url;
 		}else{
-			_console.log("没找到数字对应的信息")
+			debug("未找到该数字对应消息",uStr)
 			return " ";
 		}
 	}
 	if(nickname==""){
-		_console.log("昵称解析失败~")
+		debug("昵称未找到~",nickname)
 		return false;
 	}
 	var urlIndex = -1;
@@ -328,116 +324,144 @@ function requestData(urlStr,nickname,chat_item){
 		urlIndex = uStr.indexOf("https://");
 	}
 	if(urlIndex>=0){
-		_console.log("标题+链接信息~")
 		title = uStr.slice(0,urlIndex);
 		url = uStr.slice(urlIndex,uStr.length);
 		var history = JSON.parse(storage.getItem(nickname+"_send"));
 		if(history&&history.length>0){
 			reply.html = "";
 			for(var h in history){
+				// debug(history[h],"新旧标题",title,"结果",history[h].title==title)
 				if(history[h].title==title){
-					_console.log("信息已经答复过~")
 					var beginNo = parseInt(history[h].begin),endNo = parseInt(history[h].end);
 					// var datalist = JSON.parse(storage.getItem(nickname));
 					// for(var d=beginNo;d<=endNo;d++){
 					// 	reply.html += (d + 1) + '.' + ' ' + datalist[d].title +"<br>";
-				    //     reply.html += datalist[d].url + '<br>';
+			  //           reply.html += datalist[d].url + '<br>';
 					// }
-					reply.html = "该信息已答复--"+(beginNo+1)+"到"+(endNo+1)
-					
+					reply.html = "该信息已答复--"+beginNo+"到"+endNo
+					var msg_send_item = {};
+					msg_send_item.item = chat_item;
 					msg_send_item.text = reply.html;
 		            msg_send.push(msg_send_item);
 					return "";
 				}
 			}
 		}
-		_console.log("新信息  发送请求")
 		dataConn(requestUrl,title,url,nickname,chat_item);
 	}else{
 		if(uStr==mydata.trigger_keywork){
-			_console.log("获取今日热点信息")
+			debug("获取今日热点",uStr)
 			getHots(mydata.getHots,chat_item)
 		}else{
-			_console.log("不感兴趣,保持沉默",uStr)
+			debug("不感兴趣,保持沉默",uStr)
 		}
 		return "";
 	}
 }
 //请求新闻列表
 function dataConn(requestUrl,title,url,nickname,chat_item){
-	var requestData = {};
-	requestData.title = title;
-	requestData.url = encodeURIComponent(url);
-	_console.log("发送请求  等待结果")
-	base.dataConn(requestUrl,requestData,"post",function(res_data){
-        var reply = {};
-        var data = res_data.searchItems;
-        var tags = res_data.tags;
-        reply.html = '';
-        _console.log("处理返回信息")
-        if(tags&&tags.length>0){
-        	for(var t in tags){
-        		reply.html += tags[t] + " | " 
+	$.ajax({
+        type: 'post',
+        url: requestUrl,
+        dataType: "json",
+        // contentType: "multipart/form-data;",
+        data: {'title':title,'url':encodeURIComponent(url)},
+        jsonp:"callback",
+        timeout: 100000,
+        crossDomain:true,
+        cache: false,
+        async: true,
+        statusCode: {
+	        404:function(data){
+	        	_console.log(data);
+	        },
+	        503:function(data){
+	        	_console.log("数据请求错误",data);
+	        }
+	    },
+        success: function(res_data, textStatus, XMLHttpRequest){
+            var reply = {};
+            var data = res_data.searchItems;
+            var tags = res_data.tags;
+            reply.html = '';
+            if(tags&&tags.length>0){
+            	for(var t in tags){
+            		reply.html += tags[t] + " | " 
+            	}
+				reply.html += "<br>" 
+				var tag_l = reply.html.length;
+				for(var r =4;r<tag_l*1.5;r++){
+					reply.html += "-"
+				}
+				reply.html += "<br>"
+            }
+            if(data&&data.length>0){
+            	var new_item = [];
+            	var new_item_title = JSON.parse(storage.getItem(nickname+"_send"))?JSON.parse(storage.getItem(nickname+"_send")):[]
+				var old_item = JSON.parse(storage.getItem(nickname))?JSON.parse(storage.getItem(nickname)):[];
+				for(var d in old_item){
+		            new_item.push(old_item[d]);
+	            }
+	            for(var x = 0;x <(data.length/20);x++){
+		            var tempArry = [];
+	            	//抽出url
+	            	var cdt = 20*(x+1)>data.length?data.length:20*(x+1);
+		            for(var d = x*20; d<cdt;d ++){
+		            	tempArry.push(encodeURIComponent(data[d].url));
+		            }
+		            // debug("data数组",data,"长度",data.length)
+		            // debug("临时数组",tempArry,"长度",tempArry.length)
+		            //生成短url
+		            var short_urls = createShort_url(tempArry);
+		            // debug("短连接数组",short_urls,"长度",short_urls.length)
+		            //替换长url
+		            for(var s in short_urls){
+		            	for(var d in data){
+		            		if(data[d].url==short_urls[s].long){
+		            			data[d].url = short_urls[s].short;
+		            			break;
+		            		}
+		            	}
+		            }
+	            }
+	            //替换完成 发送并保存信息
+	            for(var d in data){
+		            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + data[d].title;
+		            reply.html += data[d].url + '<br>';
+		            new_item.push(data[d]);
+	            }
+	            new_item_title.push({"title":title,"begin":old_item.length,"end":(new_item.length-1)});
+				storage.setItem(nickname,JSON.stringify(new_item));
+				storage.setItem(nickname+"_send", JSON.stringify(new_item_title));
+        	}else{
+        		reply.html = "暂无推荐文章";
         	}
-			reply.html += "<br>" 
-			var tag_l = reply.html.length;
-			for(var r =4;r<tag_l*1.5;r++){
-				reply.html += "-"
-			}
-			reply.html += "<br>"
+			var msg_send_item = {};
+			msg_send_item.item = chat_item;
+			msg_send_item.text = reply.html;
+            msg_send.push(msg_send_item);
+        },
+        error:function(e) {
+        	return false;
         }
-        if(data&&data.length>0){
-        	var new_item = [];
-        	var new_item_title = JSON.parse(storage.getItem(nickname+"_send"))?JSON.parse(storage.getItem(nickname+"_send")):[]
-			var old_item = JSON.parse(storage.getItem(nickname))?JSON.parse(storage.getItem(nickname)):[];
-			//取出原有的信息
-			for(var d in old_item){
-	            new_item.push(old_item[d]);
-            }
-            for(var x = 0;x <(data.length/20);x++){
-	            var tempArry = [];
-            	//抽出url
-            	var cdt = 20*(x+1)>data.length?data.length:20*(x+1);
-	            for(var d = x*20; d<cdt;d ++){
-	            	tempArry.push(encodeURIComponent(data[d].url));
-	            }
-	            //生成短url
-	            _console.log("生成短连接")
-	            var short_urls = createShort_url(tempArry);
-	            //替换长url
-	            for(var s in short_urls){
-	            	for(var d in data){
-	            		if(data[d].url==short_urls[s].long){
-	            			data[d].url = short_urls[s].short;
-	            			break;
-	            		}
-	            	}
-	            }
-            }
-            //替换完成 发送并保存信息
-            _console.log("替换链接完成")
-            for(var d in data){
-	            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + data[d].title;
-	            reply.html += data[d].url + '<br>';
-	            new_item.push(data[d]);
-            }
-            new_item_title.push({"title":title,"begin":old_item.length,"end":(new_item.length-1)});
-			storage.setItem(nickname,JSON.stringify(new_item));
-			storage.setItem(nickname+"_send", JSON.stringify(new_item_title));
-    	}else{
-    		reply.html = "暂无推荐文章";
-    	}
-        _console.log("信息分析完毕,加入发送数组")
-		var msg_send_item = {};
-		msg_send_item.item = chat_item;
-		msg_send_item.text = reply.html;
-        msg_send.push(msg_send_item);
-	});
+    })
 }
 //请求今日热点
 function getHots(requestUrl,chat_item){
-	base.dataConn(requestUrl,"","get",
-		function(data, textStatus, XMLHttpRequest){
+	$.ajax({
+        type: 'get',
+        url: requestUrl,
+        dataType: "json",
+        // contentType: "multipart/form-data;",
+        jsonp:"callback",
+        timeout: 100000,
+        crossDomain:true,
+        cache: false,
+        async: true,
+        statusCode: {
+	        
+	    },
+        success: function(data, textStatus, XMLHttpRequest){
             var send_msg = {};
             send_msg.html = '';
             if(data.ret_code==1&&data.result.length>0){
@@ -450,8 +474,11 @@ function getHots(requestUrl,chat_item){
 		            for(var d = x*20; d<cdt;d ++){
 		            	tempArry.push(encodeURIComponent(results_hot[d].url));
 		            }
+		            // debug("data数组",data,"长度",data.length)
+		            // debug("临时数组",tempArry,"长度",tempArry.length)
 		            //生成短url
 		            var short_urls = createShort_url(tempArry);
+		            // debug("短连接数组",short_urls,"长度",short_urls.length)
 		            //替换长url
 		            for(var s in short_urls){
 		            	for(var r in results_hot){
@@ -464,6 +491,7 @@ function getHots(requestUrl,chat_item){
 	            }
 	            //替换完成 发送并保存信息
 	            for(var r in results_hot){
+	            	// debug("热点链接",results_hot[r].url)
 		            send_msg.html += results_hot[r].title;
 		            send_msg.html += results_hot[r].url + '<br>';
 	            }
@@ -474,34 +502,31 @@ function getHots(requestUrl,chat_item){
 			msg_send_item.item = chat_item;
 			msg_send_item.text = send_msg.html;
             msg_send.push(msg_send_item);
+        },
+        error:function(e) {
+        	return false;
         }
-    )
-}
-//获取问题答案
-function getAnswer (chat_item,question) {
-	var requestUrl = mydata.getAnswer;
-	base.dataConn(requestUrl,"","get",function(data){
-		var msg_send_item = {},answer;
-		if(data&&data.answer){
-			answer = data.answer;
-		}else{
-			answer = "没找到答案";
-		}
-		msg_send_item.item = chat_item;
-		msg_send_item.text = answer;
-        msg_send.push(msg_send_item);
-	}); 
+    })
 }
 //生成短连接
 function createShort_url(urls){
 	//urls最大长度20
 	var showurls = [];
-	var requestUrl = mydata.getShortUrl;
-    requestUrl += '?access_token=2.004t5RdC0MDVFH6d0cee864fK9S8mB&url_long='+urls.join("&url_long="),
-    base.dataConn(requestUrl,"","get",function(data){
-    	for(var d in data.urls){
-        	showurls.push({"short":data.urls[d].url_short,"long":data.urls[d].url_long});
+	var sina_url = 'https://api.weibo.com/2/short_url/shorten.json';
+    $.ajax({
+        type: 'get',
+        url: sina_url+'?access_token=2.004t5RdC0MDVFH6d0cee864fK9S8mB&url_long='+urls.join("&url_long="),
+        dataType: "json",
+        contentType: "multipart/form-data;",
+        jsonp:"callback",
+        crossDomain:true,
+        cache: false,
+        async: false,
+        success: function(data, textStatus, XMLHttpRequest){
+            for(var d in data.urls){
+            	showurls.push({"short":data.urls[d].url_short,"long":data.urls[d].url_long});
+            }
         }
-    },false);
+    })
     return showurls;
 }
