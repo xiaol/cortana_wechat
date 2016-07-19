@@ -18,8 +18,6 @@ var addMsg_flag = true
 var click_falg = true
 //存储收到的信息
 var msg_chats = []
-//计数器
-var o = 0
 //我的名称
 var myname = ""
 // 应对 微信网页偷换了console 使起失效
@@ -134,12 +132,6 @@ function resolve_qst($chat_item){
 				].join(', '))
 			}
 			_console.log("信息组",$msg)
-			//信息解析完成 发送请求
-			// if(msg_analyze($msg)){
-			// 	msg = msg_analyze($msg)
-			// }else{
-			// 	return false;
-			// }
 			if($msg&&$msg.length>0){
 				var ml = $msg.length;
 				var msg = {};  
@@ -307,12 +299,15 @@ function requestData(urlStr,nickname,chat_item){
 	}
 	if(!isNaN(uStr)){
 		var lists = JSON.parse(storage.getItem(nickname));
+		_console.log("lists",lists)
+		_console.log("lists.length",lists.length)
+		_console.log("parseInt(uStr)",parseInt(uStr))
 		if(lists&&parseInt(uStr)<=lists.length&&lists.length>0){
 			var item = lists[parseInt(uStr)-1];
 			uStr = item.title + item.url;
 		}else{
 			_console.log("没找到数字对应的信息")
-			return " ";
+			return false;
 		}
 	}
 	if(nickname==""){
@@ -379,7 +374,7 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         	}
 			reply.html += "<br>" 
 			var tag_l = reply.html.length;
-			for(var r =4;r<tag_l*1.5;r++){
+			for(var r =4;r<56;r++){
 				reply.html += "-"
 			}
 			reply.html += "<br>"
