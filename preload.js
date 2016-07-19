@@ -102,7 +102,6 @@ function onLogin(){
 				msg_send = msg_send.slice(1)
 			}
 		}
-		var newFriend = $(".chat_item .slide-left .ng-scope")[0];
 	}, 400)
 }
 //解析信息
@@ -173,7 +172,7 @@ function resolve_qst($chat_item){
 						requestData(msg.text,msg.title,$chat_item)
 					}else{
 						_console.log("信息已经处理~")
-					}
+					}   
 				}
 			}
 			reset();
