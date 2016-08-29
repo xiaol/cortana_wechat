@@ -478,7 +478,7 @@ function getAnswer (chat_item,question) {
 	base.dataConn(requestUrl,requestData,"get",function(data){
 		var msg_send_item = {},answer;
 		if(data&&data.answer){
-			answer = data.question + "©<br>" + data.answer;
+			answer = data.question + "→ → →<br>" + data.answer;
 		}else{
 			answer = "没找到答案";
 		}
