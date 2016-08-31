@@ -32,7 +32,7 @@ app.on('ready', function(){
 			plugins: true,
 			nodeIntegration: false,
 			webSecurity: false,
-			preload: __dirname + '/preload.js'
+			preload: __dirname + '/preload-0.0.4.js'
 		}
 	});
 	var urlStr = 'http://wx.qq.com/?lang=zh_CN&t=' + Date.now();
