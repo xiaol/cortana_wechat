@@ -458,8 +458,10 @@ function getHots(requestUrl,chat_item){
 		           //  }
 	            // }
 	            //替换完成 发送并保存信息
-	            for(var r in results_hot){
+	            var rl = (results_hot.length>10?10:results_hot.length)
+	            for(var r =0;r<rl;r++){
 	            	var result = results_hot[r];
+	            	_console.log(results_hot)
 	            	result.url = createShort_url(result.url)
 		            send_msg.html += result.title;
 		            send_msg.html += result.url + '<br>';
@@ -467,6 +469,7 @@ function getHots(requestUrl,chat_item){
         	}else{
         		send_msg.html = "暂无今日热点";
         	}
+        	_console.log("添加到发送数组")
 			var msg_send_item = {};
 			msg_send_item.item = chat_item;
 			msg_send_item.text = send_msg.html;
@@ -495,7 +498,7 @@ function getAnswer (chat_item,question) {
 function createShort_url(url){
 	//urls最大长度20
 	var requestUrl = mydata.getShortUrl,showUrl="";
-    requestUrl += 'longUrl='+url,
+    requestUrl += 'longUrl='+encodeURIComponent(url),
     base.dataConn(requestUrl,"","get",function(data){
     	if(data.status_code==200){
     		showUrl = data.data.url;
