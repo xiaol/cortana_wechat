@@ -494,9 +494,15 @@ function getAnswer (chat_item,question) {
 	var requestData = {};
 	requestData.question = question;
 	base.dataConn(requestUrl,requestData,"get",function(data){
-		var msg_send_item = {},answer;
+		var msg_send_item = {},answer="";
 		if(data&&data.answer){
-			answer = data.question + "→ → →<br>" + data.answer;
+			answer += data.question + "<br>";
+			answer += "'";
+			for(var k in data.keywords){
+				answer += data.keywords[k]
+			}
+			answer += "'<br>";
+			answer += "→ → →<br>" + data.answer;
 		}else{
 			answer = "没找到答案";
 		}
