@@ -366,6 +366,7 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         var reply = {};
         var data = res_data.searchItems;
         var tags = res_data.tags;
+        var abs = res_data.abs;
         reply.html = '';
         _console.log("处理返回信息")
         if(tags&&tags.length>0){
@@ -373,12 +374,18 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         		reply.html += tags[t] + " | " 
         	}
 			reply.html += "<br>" 
-			var tag_l = reply.html.length;
-			for(var r =4;r<56;r++){
-				reply.html += "-"
-			}
-			reply.html += "<br>"
+			
         }
+        if(abs&&abs.length>0){
+        	for(var a in abs){
+        		reply.html += "摘要:   ";
+        		reply.html += abs[a] + "<br>" ;
+        	}
+        }
+        for(var r =4;r<56;r++){
+			reply.html += "-"
+		}
+		reply.html += "<br>"
         if(data&&data.length>0){
         	var new_item = [];
         	var new_item_title = JSON.parse(storage.getItem(nickname+"_send"))?JSON.parse(storage.getItem(nickname+"_send")):[]
