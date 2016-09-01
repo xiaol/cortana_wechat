@@ -299,7 +299,7 @@ function requestData(urlStr,nickname,chat_item){
 	}
 	if(!isNaN(uStr)){
 		var lists = JSON.parse(storage.getItem(nickname));
-		_console.log("lists",lists)
+		// _console.log("lists",lists)
 		_console.log("lists.length",lists.length)
 		_console.log("parseInt(uStr)",parseInt(uStr))
 		if(lists&&parseInt(uStr)<=lists.length&&lists.length>0){
@@ -380,13 +380,13 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         if(abs&&abs.length>0){
         	// for(var a in abs){
         		var abs_str = abs[0]
-        		abs_str = (abs_str.length>36?(abs_str.substring(0,36)+"..."):abs_str)
+        		// abs_str = (abs_str.length>36?(abs_str.substring(0,36)+"..."):abs_str)
         		reply.html += "摘要:   ";
         		reply.html +=  abs_str + "<br>" ;
         	// }
         }
         //添加分割符
-        for(var r =4;r<56;r++){
+		for(var r =4;r<56;r++){
 			reply.html += "-"
 		}
 		reply.html += "<br>"
@@ -399,7 +399,7 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
 	            new_item.push(old_item[d]);
             }
             // for(var x = 0;x <(data.length/20);x++){
-	           //  var tempArry = [];
+			//	  var tempArry = [];
             // 	//抽出url
             // 	var cdt = 20*(x+1)>data.length?data.length:20*(x+1);
 	           //  for(var d = x*20; d<cdt;d ++){
@@ -423,9 +423,9 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
             var dl = (data.length>3?3:data.length);
             for(var d =0;d<dl;d++){
             	var tem_data = data[d];
-	            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + tem_data.title;
+	            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + tem_data.title + "<br>";
 	            tem_data.url = createShort_url(tem_data.url);
-	            reply.html += tem_data.url + '<br>';
+	            reply.html += tem_data.url + '<br><br>';
 	            new_item.push(tem_data);
             }
             new_item_title.push({"title":title,"begin":old_item.length,"end":(new_item.length-1)});
@@ -470,12 +470,12 @@ function getHots(requestUrl,chat_item){
 		           //  }
 	            // }
 	            //替换完成 发送并保存信息
-	            var rl = (results_hot.length>10?10:results_hot.length)
+	            var rl = (results_hot.length>5?5:results_hot.length)
 	            for(var r =0;r<rl;r++){
 	            	var result = results_hot[r];
 	            	result.url = createShort_url(result.url)
-		            send_msg.html += result.title;
-		            send_msg.html += result.url + '<br>';
+		            send_msg.html += result.title + "<br>";
+		            send_msg.html += result.url + '<br><br>';
 	            }
         	}else{
         		send_msg.html = "暂无今日热点";
