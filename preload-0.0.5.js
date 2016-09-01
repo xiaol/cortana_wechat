@@ -369,19 +369,23 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
         var abs = res_data.abs;
         reply.html = '';
         _console.log("处理返回信息")
-        if(tags&&tags.length>0){
-        	for(var t in tags){
-        		reply.html += tags[t] + " | " 
-        	}
-			reply.html += "<br>" 
-			
-        }
+    	//添加标签信息
+		// if(tags&&tags.length>0){
+		// 	for(var t in tags){
+		// 		reply.html += tags[t] + " | " 
+		// 	}
+		// 	reply.html += "<br>" 
+		// }
+        //添加摘要信息
         if(abs&&abs.length>0){
-        	for(var a in abs){
+        	// for(var a in abs){
+        		var abs_str = abs[0]
+        		abs_str = (abs_str.length>36?(abs_str.substring(0,36)+"..."):abs_str)
         		reply.html += "摘要:   ";
-        		reply.html += abs[a] + "<br>" ;
-        	}
+        		reply.html +=  abs_str + "<br>" ;
+        	// }
         }
+        //添加分割符
         for(var r =4;r<56;r++){
 			reply.html += "-"
 		}
@@ -416,7 +420,8 @@ function dataConn(requestUrl,title,url,nickname,chat_item){
             // }
             //替换完成 发送并保存信息
             _console.log("替换链接完成")
-            for(var d in data){
+            var dl = (data.length>3?3:data.length);
+            for(var d =0;d<dl;d++){
             	var tem_data = data[d];
 	            reply.html += (old_item.length+1+parseInt(d)) + '.' + ' ' + tem_data.title;
 	            tem_data.url = createShort_url(tem_data.url);
@@ -503,14 +508,10 @@ function getAnswer (chat_item,question) {
 //生成短连接
 function createShort_url(url){
 	//urls最大长度20
-	var requestUrl = mydata.getShortUrl,showUrl="";
-    requestUrl += 'longUrl='+encodeURIComponent(url),
+	var requestUrl = mydata.getShortUrl,showUrl=url;
+    requestUrl += 'url='+encodeURIComponent(url);
     base.dataConn(requestUrl,"","get",function(data){
-    	if(data.status_code==200){
-    		showUrl = data.data.url;
-    	}else{
-    		showUrl = url;
-    	}
+		showUrl = data.short_url;
     },false);
     return showUrl;
 }
