@@ -18,8 +18,8 @@ app.on('ready', function(){
 	// var win = new BrowserWindow({})
 	// win.loadUrl('file://' + __dirname + '/index.html')__dirname + '/preload.js'
 	var win = new BrowserWindow({
-		width:1000,
-		height:600,
+		width:1500,
+		height:800,
 		resizable: true,
 		movable:true,
 		center: true,
@@ -32,7 +32,7 @@ app.on('ready', function(){
 			plugins: true,
 			nodeIntegration: false,
 			webSecurity: false,
-			preload: __dirname + '/preload-0.0.6.js'
+			preload: __dirname + '/preload-0.0.7.js'
 		}
 	});
 	var urlStr = 'http://wx.qq.com/?lang=zh_CN&t=' + Date.now();
