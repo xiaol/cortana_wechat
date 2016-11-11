@@ -4,7 +4,6 @@ var app = require('electron').app
 var _ = require('lodash')
 var fs = require('fs-extra')
 var bytes = require('bytes')
-
 function debug(/*args*/){
 	var args = JSON.stringify(_.toArray(arguments))
 	// console.log(args)
@@ -32,11 +31,10 @@ app.on('ready', function(){
 			plugins: true,
 			nodeIntegration: false,
 			webSecurity: false,
-			preload: __dirname + '/preload-0.0.7.js'
+			preload: __dirname + '/preload-xue.js'
 		}
 	});
 	var urlStr = 'http://wx.qq.com/?lang=zh_CN&t=' + Date.now();
-	// var options = {"httpReferrer":urlStr,"extraHeaders":"pragma: no-cache\nAccept:application/json, text/plain, */*\nContent-Type:application/json;charset=UTF-8", "userAgent":'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 	win.loadURL(urlStr)
 	win.webContents.openDevTools()
 	// electron api DownloadItem

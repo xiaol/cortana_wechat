@@ -298,8 +298,6 @@ function requestData(urlStr,nickname,chat_item,chatType){
 	if(!isNaN(uStr)){
 		var lists = JSON.parse(storage.getItem(nickname));
 		// _console.log("lists",lists)
-		_console.log("lists.length",lists.length)
-		_console.log("parseInt(uStr)",parseInt(uStr))
 		if(lists&&parseInt(uStr)<=lists.length&&lists.length>0){
 			var item = lists[parseInt(uStr)-1];
 			uStr = item.title + item.url;
